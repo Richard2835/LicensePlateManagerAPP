@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "206732422149",
+    "firebase_url": "https://parkovisko-db-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "parkovisko-db",
+    "storage_bucket": "parkovisko-db.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:206732422149:android:d09e9cf88bbf34a1a4006c",
+        "android_client_info": {
+          "package_name": "com.example.licenseplatemanager"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "206732422149-gdpd1kblnlb1tq9aic5105ai9jhbsusb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7fOpqP-QZPs_-y_2f9AjOiKHsfakjotM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "206732422149-gdpd1kblnlb1tq9aic5105ai9jhbsusb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
