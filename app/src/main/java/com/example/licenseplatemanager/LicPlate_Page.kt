@@ -190,7 +190,9 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
                         // kontrola existencie UID v danom parkovisku
                         if (i.key.toString().equals("empty"))
                             break
-                        list.add(LicPlateData(i.key.toString(),i.child("date").value.toString()))
+                        // pridanie do arrayListu (ecv + datum vytvorenia)
+                        list.add(LicPlateData(i.key.toString(),
+                            i.child("created").value.toString()))
                     }
                     if (list.isEmpty() || list[0].name.equals("empty")){
                         setEmptyContent(true)
@@ -219,13 +221,20 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
 
     private fun addItem(plateName: String){
         val item = object : ValueEventListener {
-            var actualDate: String = Calendar.getInstance().get(Calendar.DAY_OF_MONTH).toString() +
-                    "." + Calendar.getInstance().get(Calendar.MONTH).toString() +
-                    "." + Calendar.getInstance().get(Calendar.YEAR).toString()
+            val cal = Calendar.getInstance()
+            var actualDate: String = cal.get(Calendar.DAY_OF_MONTH).toString() +
+                    "." + cal.get(Calendar.MONTH).toString() +
+                    "." + cal.get(Calendar.YEAR).toString()
+            var visitedTime: String = cal.get(Calendar.DAY_OF_MONTH).toString() +
+                    "/" + cal.get(Calendar.MONTH).toString() +
+                    " " + cal.get(Calendar.HOUR_OF_DAY).toString() +
+                    ":" + cal.get(Calendar.MINUTE).toString()
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    snapshot.child(plateName).child("date").ref.setValue(actualDate)
-                    snapshot.child(plateName).child("notification").ref.setValue(false)
+                    snapshot.child(plateName).child("created").ref.setValue(actualDate)
+                    snapshot.child(plateName).child("notify").ref.setValue(false)
+                    snapshot.child(plateName).child("seen").ref.setValue(true)
+                    snapshot.child(plateName).child("lastVisited").ref.setValue(visitedTime)
                     if (list.size == 0 && snapshot.child("empty").exists()){
                         snapshot.child("empty").ref.removeValue()
                     }
