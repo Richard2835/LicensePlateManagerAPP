@@ -3,6 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/notifIconID"
+        android:title="notifikácie"
+        android:icon="@drawable/ic_round_notifications_none_24"
+        android:iconTint="@color/white"
+        app:showAsAction="always">
+
+    </item>
+
+    <item
         android:id="@+id/logoutID"
         android:title="odhlásiť"
         android:icon="@drawable/ic_baseline_logout_24"

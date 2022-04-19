@@ -131,6 +131,11 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when(item.itemId) {
+            R.id.notifIconID -> {
+                startActivity(Intent(this,Notification_Page::class.java))
+                finish()
+                return true
+            }
             R.id.logoutID -> {
                 mAuth.signOut()
                 showToast("odhlásenie bolo úspešné")

@@ -10,6 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LicensePlateManager">
         <activity
+            android:name=".Notification_Page"
+            android:exported="false" />
+        <activity
             android:name=".LicPlate_Page"
             android:exported="false" />
         <activity
