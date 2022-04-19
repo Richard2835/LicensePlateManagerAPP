@@ -8,6 +8,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -40,7 +42,8 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
     private lateinit var list: ArrayList<ParkData>
 
     private lateinit var notificationManager: NotificationManager
-//    private lateinit var notificationChannel: NotificationChannel
+
+    //    private lateinit var notificationChannel: NotificationChannel
 //    private lateinit var builder: Notification.Builder
     private val channelId = "com.example.licenseplatemanager"
     private val notificationId = 1
@@ -91,10 +94,12 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
         }
     }
 
-//    override fun onStop() {
-//        super.onStop()
-//        mAuth.signOut()
-//    }
+    override fun onStop() {
+        super.onStop()
+        //mAuth.signOut()
+        if (mAuth.currentUser != null)
+            notifyIfDataHasChanged(mAuth.currentUser!!.uid.toString())
+    }
 
 //    override fun onResume() {
 //        super.onResume()
@@ -107,7 +112,7 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
+        return when (item.itemId) {
             R.id.logoutID -> {
                 mAuth.signOut()
                 showToast("odhlásenie bolo úspešné")
@@ -117,8 +122,10 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
             R.id.removeID -> {
                 MaterialAlertDialogBuilder(this)
                     .setTitle("Odstránenie užívateľa")
-                    .setMessage("Naozaj chcete odstrániť vaše užívateľské konto?\n" +
-                            "aktuálne prihlásený ako: ${mAuth.currentUser!!.email}")
+                    .setMessage(
+                        "Naozaj chcete odstrániť vaše užívateľské konto?\n" +
+                                "aktuálne prihlásený ako: ${mAuth.currentUser!!.email}"
+                    )
                     .setPositiveButton("áno") { p0, p1 ->
                         var uid = mAuth.currentUser!!.uid.toString()
                         mAuth.currentUser!!.delete()
@@ -130,17 +137,18 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
                                 showToast("nastala chyba: " + exception.localizedMessage)
                             }
                     }
-                    .setNegativeButton("nie") {dialog, which ->
+                    .setNegativeButton("nie") { dialog, which ->
                     }
                     .show()
 
 //                Toast.makeText(this,"remove user", Toast.LENGTH_SHORT).show()
                 return true
-            } else -> super.onOptionsItemSelected(item)
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
-//    notifikacie, pre verzie nad Android 8 (Oreo), je nutne vztvorit notifikacny kanal
+    //    notifikacie, pre verzie nad Android 8 (Oreo), je nutne vztvorit notifikacny kanal
     private fun createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
@@ -156,16 +164,32 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
         }
     }
 
-    private fun sendNotification(licPlate: String, parkName: String) {
+    private fun sendNotification(licPlate: String, parkName: String, visited: String) {
         val intent = Intent(this, HomePage::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent: PendingIntent =
+            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        val bitmap: Bitmap = BitmapFactory.decodeResource(resources, R.drawable.logo)
 
         val builder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(licPlate + " zaparkovalo")
             .setContentText("Toto vozidlo vošlo na parkovisko - " + parkName)
+            .setLargeIcon(bitmap)
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(licPlate + " -> " + parkName)
+                    .setSummaryText(visited)
+                    .bigText(
+                        "Info o vozidle s evidenčným číslom * " + licPlate +
+                                " *\n\t - bolo zaparkované na parkovisku \"" + parkName +
+                                "\"\n" +
+                                "\t v čase " + visited +
+                                "\n-> pre bližšie info kliknite na túto notifikáciu <-"
+                    )
+            )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             // Set the intent that will fire when the user taps the notification
             .setContentIntent(pendingIntent)
@@ -179,19 +203,31 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
     }
 
     private fun notifyIfDataHasChanged(uid: String) {
-        notificationListener = object : ValueEventListener{
+        notificationListener = object : ValueEventListener {
 
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()){
+                // odstranenie notifikacie, ak sa uzivatel odhlasil, nesedi s aktualne prihlasenym!
+                if (mAuth.currentUser == null ||
+                    mAuth.currentUser?.uid.toString().compareTo(uid) != 0
+                ) {
+                    dbNotifyRef.removeEventListener(notificationListener)
+                    return
+                }
+                if (snapshot.exists()) {
                     // prehladavame parkoviska
-                    for (i in snapshot.children){
-                        if (i.child(uid).exists()){
+                    for (i in snapshot.children) {
+                        if (i.child(uid).exists()) {
                             // prehladavame pre dane uid jeho ecv
-                            for (j in i.child(uid).children){
+                            for (j in i.child(uid).children) {
                                 // ak ecv existuje a ma notify hodnotu true -> notifikuj
                                 if (j.child("notify").exists() &&
-                                    j.child("notify").value == true){
-                                    sendNotification(j.key.toString(), i.key.toString())
+                                    j.child("notify").value == true
+                                ) {
+                                    sendNotification(
+                                        j.key.toString(),
+                                        i.key.toString(),
+                                        j.child("lastVisited").value.toString()
+                                    )
                                     // nastavenie hodnoty nazad na false (aby nechodili stale notif.)
                                     j.child("notify").ref.setValue(false)
                                     break
@@ -209,32 +245,33 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
 
         }
         dbNotifyRef.addValueEventListener(notificationListener)
+
     }
 
-    private fun showToast(text: String){
-        Toast.makeText(this,text,Toast.LENGTH_SHORT).show()
+    private fun showToast(text: String) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     }
 
     private fun backToLoginPage() {
-        startActivity(Intent(this,Login_page::class.java))
+        startActivity(Intent(this, Login_page::class.java))
         finish()
     }
 
     private fun getDataFromDB(uid: String) {
-        valueListener = object : ValueEventListener{
+        valueListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 list.clear()
                 // kotrola existencie referencie
-                if (snapshot.exists()){
+                if (snapshot.exists()) {
                     var count: Int
                     count = 0
                     // prechadzanie poloziek (child-ov)
-                    for (i in snapshot.children){
+                    for (i in snapshot.children) {
                         // kontrola existencie UID v danom parkovisku
-                        if (i.child(uid).exists()){
+                        if (i.child(uid).exists()) {
                             count = 0
                             // vnoreny cyklus pre zistenie poctu znaciek daneho usera v danom parkovisku
-                            for (j in i.child(uid).children){
+                            for (j in i.child(uid).children) {
                                 if (j.key.toString().compareTo("empty") == 0)
                                     break
                                 else
@@ -242,23 +279,23 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
                             }
                         }
 
-                        list.add(ParkData(i.key.toString(),count.toString()))
+                        list.add(ParkData(i.key.toString(), count.toString()))
                     }
-                    recView.adapter = ParkAdapter(list,this@HomePage)
+                    recView.adapter = ParkAdapter(list, this@HomePage)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(applicationContext,error.toString(),Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, error.toString(), Toast.LENGTH_LONG).show()
             }
         }
         db.addValueEventListener(valueListener)
     }
 
     override fun onItemClick(position: Int) {
-        val intent = Intent(this,LicPlate_Page::class.java)
-        intent.putExtra("parkName",list[position].parkName)
-        intent.putExtra("numPlates",list[position].plateNum)
+        val intent = Intent(this, LicPlate_Page::class.java)
+        intent.putExtra("parkName", list[position].parkName)
+        intent.putExtra("numPlates", list[position].plateNum)
         startActivity(intent)
         finish()
     }
@@ -275,7 +312,7 @@ class HomePage : AppCompatActivity(), ParkAdapter.OnItemClickListener {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(applicationContext,error.toString(),Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, error.toString(), Toast.LENGTH_LONG).show()
             }
         }
 //        db.addValueEventListener(deleteUser)
