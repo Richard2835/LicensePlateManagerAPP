@@ -241,10 +241,10 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
         val item = object : ValueEventListener {
             val cal = Calendar.getInstance()
             var actualDate: String = cal.get(Calendar.DAY_OF_MONTH).toString() +
-                    "." + cal.get(Calendar.MONTH).toString() +
+                    "." + (cal.get(Calendar.MONTH)+1).toString() +
                     "." + cal.get(Calendar.YEAR).toString()
             var visitedTime: String = cal.get(Calendar.DAY_OF_MONTH).toString() +
-                    "/" + cal.get(Calendar.MONTH).toString() +
+                    "/" + (cal.get(Calendar.MONTH)+1).toString() +
                     " " + cal.get(Calendar.HOUR_OF_DAY).toString() +
                     ":" + cal.get(Calendar.MINUTE).toString()
 
