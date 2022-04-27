@@ -25,12 +25,14 @@ class Login_page : AppCompatActivity() {
 
         var actionBar = getSupportActionBar()
 
-        // showing the back button in action bar
+        // ukazanie sipky spat v toolbare
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true)
         }
 
+        // ziskanie autentifikacnej casti Firebase databazy
         mAuth = FirebaseAuth.getInstance()
+        // priradenie layoutovych objektov do pom. premennej
         var email = findViewById<EditText>(R.id.emailID)
         var pass = findViewById<EditText>(R.id.passID)
 
@@ -38,6 +40,7 @@ class Login_page : AppCompatActivity() {
         var registerBtn = findViewById<MaterialButton>(R.id.registerBtnID)
         var loadingBar = findViewById<ProgressBar>(R.id.progressLoginID)
 
+        // ak uz bol uzivatel predtym autentifikovany, prejde sa rovno na aktivitu HomePage
         val activeUser = Firebase.auth.currentUser
         if (activeUser != null) {
             val activeUserMail = activeUser!!.email
@@ -52,6 +55,10 @@ class Login_page : AppCompatActivity() {
 //        emailTxt = email.text.toString().trim()
 //        passTxt = pass.text.toString().trim()
 
+        // nastavenie akcie pre stalcenie Login tlacitka, zavola sa pomocna funkcia chceckData,
+        // pre spravne vyplnenie poli a ak takyto uzivatel existuje a prihl. udaje su spravne
+        // prihlasi ho a prejde sa na HomePage, inak ostavame na tejto aktivite a pomocou Toastu
+        // informujeme uzivatela o chybovosti
         loginBtn.setOnClickListener() {
             loadingBar.visibility = View.VISIBLE
             if (chceckData(email,pass) == 0) {
@@ -83,12 +90,15 @@ class Login_page : AppCompatActivity() {
             }
         }
 
+        // obsluha tlacitka Registracia, kde po jeho stlaceni otvarame aktivitu Register_page a
+        // zatvarame aktualnu aktivitu (pre setrenie prostriedkov)
         registerBtn.setOnClickListener() {
             startActivity(Intent(this,Register_page::class.java))
             finish()
         }
     }
 
+    // obsluha toolbaru, ak stlacime sipku spat, vratime sa na MainActivity
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
@@ -101,6 +111,7 @@ class Login_page : AppCompatActivity() {
     }
 
 
+    // metoda kontroly vyplenia poli
     fun chceckData(email: EditText, pass: EditText): Int {
 
         var emailTxt: String

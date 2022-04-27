@@ -8,15 +8,16 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
 class NotificationAdapter(
-    private val notifList: ArrayList<NotificationData>, private val listener: NotificationAdapter.OnItemClickListener
-): RecyclerView.Adapter<NotificationAdapter.MyViewHolder>() {
+    private val notifList: ArrayList<NotificationData>,
+    private val listener: NotificationAdapter.OnItemClickListener
+) : RecyclerView.Adapter<NotificationAdapter.MyViewHolder>() {
 
     inner class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView),
-        View.OnClickListener{
-        val plate : TextView = itemView.findViewById(R.id.notifyPlateID)
-        val park : TextView = itemView.findViewById(R.id.notifyParkID)
-        val dateTime : TextView = itemView.findViewById(R.id.notifyDateTimeID)
-        val checkBtn : ImageView = itemView.findViewById(R.id.checkBtnID)
+        View.OnClickListener {
+        val plate: TextView = itemView.findViewById(R.id.notifyPlateID)
+        val park: TextView = itemView.findViewById(R.id.notifyParkID)
+        val dateTime: TextView = itemView.findViewById(R.id.notifyDateTimeID)
+        val checkBtn: ImageView = itemView.findViewById(R.id.checkBtnID)
 
         init {
             checkBtn.setOnClickListener(this)
@@ -35,8 +36,10 @@ class NotificationAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.notify_item,
-            parent,false)
+        val itemView = LayoutInflater.from(parent.context).inflate(
+            R.layout.notify_item,
+            parent, false
+        )
         return MyViewHolder(itemView)
     }
 

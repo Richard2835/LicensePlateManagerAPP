@@ -26,6 +26,7 @@ import java.util.regex.Pattern
 
 class Register_page : AppCompatActivity() {
 
+    // premenne pre uchovavanie referencii Firebase
     private lateinit var mAuth: FirebaseAuth
     private lateinit var db: DatabaseReference
 
@@ -35,14 +36,16 @@ class Register_page : AppCompatActivity() {
 
         var actionBar = getSupportActionBar()
 
-        // showing the back button in action bar
+        // ukazanie sipky spat v toolbare
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true)
         }
 
+        // ziskanie referencii Firebase
         mAuth = FirebaseAuth.getInstance()
         db = Firebase.database.reference
 
+        // pomocne premenne pre uchovavanie objektov z layoutu
         var user = findViewById<EditText>(R.id.userID)
         var email = findViewById<EditText>(R.id.emailID)
         var pass = findViewById<EditText>(R.id.passID)
@@ -50,11 +53,13 @@ class Register_page : AppCompatActivity() {
         var enterBtn = findViewById<MaterialButton>(R.id.enterBtnID)
         var loadingBar = findViewById<ProgressBar>(R.id.progressRegID)
 
+        // nastavenie akcie na stalcenie register tlacitka
         enterBtn.setOnClickListener() {
             regAccount(user, email, pass, passAgain, loadingBar)
         }
     }
 
+    // obsluha sipky spat v toolbare, kde po stalceni sa vraciame na LoginPage
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
@@ -65,6 +70,7 @@ class Register_page : AppCompatActivity() {
         }
     }
 
+    // obsluzna funkcia stlacenia register tlacitka
     private fun regAccount(
         user: EditText,
         email: EditText,
@@ -77,6 +83,7 @@ class Register_page : AppCompatActivity() {
         var passTxt: String
         var passAgainTxt: String
 
+        // ziskanie textu z policok v layoute a ulozenie do pom. premennych
         userTxt = user.text.toString().trim()
         emailTxt = email.text.toString().trim()
         passTxt = pass.text.toString().trim()
@@ -133,13 +140,12 @@ class Register_page : AppCompatActivity() {
             return
         }
 
-
+        // vytvaranie konta (pri vytvarani sa zobrazi tociace sa koliecko)
         loading.visibility = View.VISIBLE
         mAuth.createUserWithEmailAndPassword(emailTxt, passTxt)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     loading.visibility = View.GONE
-//                    Log.d(TAG, "createUserWithEmail:success")
                     val user = mAuth.currentUser
                     if (user != null) {
                         val setUserName = userProfileChangeRequest {
@@ -150,10 +156,8 @@ class Register_page : AppCompatActivity() {
                                 if (task.isSuccessful) {
                                     Toast.makeText(this, "registrácia úspešná", Toast.LENGTH_SHORT)
                                         .show()
-//                                    backToLoginPage()
                                 }
                             }
-//                        Toast.makeText(this,"registrácia úspešná, meno sa však nepridalo!", Toast.LENGTH_SHORT).show()
                         addUserToDB()
                         toHomePage()
                     }
@@ -167,21 +171,19 @@ class Register_page : AppCompatActivity() {
             }
     }
 
-//    private fun backToLoginPage() {
-//        startActivity(Intent(this,Login_page::class.java))
-//        finish()
-//    }
-
+    // zmena aktivity na HomePage a zatvorenie aktualnej aktivity
     private fun toHomePage() {
         startActivity(Intent(this, HomePage::class.java))
         finish()
     }
 
+    // zmena aktivity na LoginPage a zatvorenie aktualnej aktivity
     private fun backToLoginPage() {
-        startActivity(Intent(this,Login_page::class.java))
+        startActivity(Intent(this, Login_page::class.java))
         finish()
     }
 
+    // pridanie konta do DB
     private fun addUserToDB() {
         var addUser = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -194,7 +196,6 @@ class Register_page : AppCompatActivity() {
                 Toast.makeText(applicationContext, error.toString(), Toast.LENGTH_LONG).show()
             }
         }
-//        db.addValueEventListener(addUser)
         db.addListenerForSingleValueEvent(addUser)
     }
 }

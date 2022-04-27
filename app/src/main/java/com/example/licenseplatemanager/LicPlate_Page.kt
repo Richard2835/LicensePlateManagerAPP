@@ -24,6 +24,7 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
+    //    deklaracia potrebnych premennych
     private lateinit var mAuth: FirebaseAuth
     private lateinit var db: DatabaseReference
     private lateinit var parkReference: DatabaseReference
@@ -33,6 +34,8 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
     private lateinit var emptyLayout: LinearLayout
     private lateinit var parkHeading: TextView
 
+    //    onCreate metoda, kde nastavime niektore z premennych (Firebase, recycerView)
+    //    hlavna metoda pri otvoreni novej instancie tejto triedy
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.lic_plate_page)
@@ -44,15 +47,17 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
             actionBar.setDisplayHomeAsUpEnabled(true)
         }
 
+        // ziskanie referencii na Firebase a kontrola prihlaseneho usera
         mAuth = FirebaseAuth.getInstance()
         db = Firebase.database.reference
 
         val user = Firebase.auth.currentUser
         if (user == null) {
             showToast("zlyhala autentifikácia účtu!")
-            backToLoginPage()
+            backToLoginPage()   // ak sa neda autentifikovat, vraciame sa na LoginPage
         }
 
+        // nastavenie recyclerVieweru
         emptyLayout = findViewById<LinearLayout>(R.id.emptyPageID)
         plateRecView = findViewById<RecyclerView>(R.id.plateRecViewID)
         plateRecView.layoutManager = LinearLayoutManager(this)
@@ -61,10 +66,12 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
 
         parkHeading = findViewById<TextView>(R.id.selectedParkID)
 
-        val bundle: Bundle?= intent.extras
+        // ziskanie mien z predoslej aktivity
+        val bundle: Bundle? = intent.extras
         val parkName = bundle!!.getString("parkName")
         val numPlates = bundle?.getString("numPlates")
 
+        // ak bolo v danom parkovisku 0 priradenych znaciek, nastavime prazdny layout recycleru
         parkHeading.text = parkName
         if (numPlates.equals("0")) setEmptyContent(true) else setEmptyContent(false)
 
@@ -72,8 +79,10 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
             .child(mAuth.currentUser!!.uid.toString())
             .ref
 
+        // nastavenie tlacitka pridania novej ECV, kde po jeho stlaceni sa otvori dialogove okno
+        // kde uzivatel zapise pozadovanu znacku a ta sa ulozi do DB (ak tam taka este nie je)
         val addBtn = findViewById<ImageView>(R.id.addBtnID)
-        addBtn.setOnClickListener(){
+        addBtn.setOnClickListener() {
             var typedLicPlate = EditText(this)
             typedLicPlate.inputType = InputType.TYPE_CLASS_TEXT
             typedLicPlate.hint = "napr. XXYYYZZ"
@@ -84,8 +93,7 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
                     if (!isPlateInList(typedLicPlate.text.toString().uppercase().trim())) {
                         addItem(typedLicPlate.text.toString().uppercase().trim())
                         showToast("ečv ${typedLicPlate.text.toString().uppercase().trim()} pridaná")
-                    }
-                    else{
+                    } else {
                         showToast("zadaná EČV už je v databáze")
                     }
                 }
@@ -95,12 +103,14 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
         getDataFromDB()
     }
 
+    // onStart metoda, ak sa opat vratime k povodnej instancii tejto triedy
     public override fun onStart() {
         super.onStart()
         var username = findViewById<TextView>(R.id.userNameID)
         var mail = findViewById<TextView>(R.id.userMailID)
 
-//        val user = Firebase.auth.currentUser
+        // zistenie pritomnosti prihlaseneho, ak je nastavime jeho meno a email do Layoutu a
+        // zapneme notifikacie, inak sa vratime nazad na LoginPage
         val user = mAuth.currentUser
         if (user == null) {
             showToast("zlyhala autentifikácia účtu!")
@@ -108,31 +118,20 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
         } else {
             mail.text = user!!.email
             username.text = user!!.displayName
-//            showToast("vitajte späť!")
         }
     }
 
-//    override fun onStop() {
-//        super.onStop()
-//        mAuth.signOut()
-//    }
-
-//    override fun onResume() {
-//        super.onResume()
-//        showToast("pokracujeme")
-//    }
-
-
-
+    // vytvorenie menu toolbaru
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.mainmenu, menu)
         return true
     }
 
+    // urcenie vramci toolbaru, co sa ma stat po kliknuti na polozku, vysvetlene v HomePage aktivite
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
+        return when (item.itemId) {
             R.id.notifIconID -> {
-                startActivity(Intent(this,Notification_Page::class.java))
+                startActivity(Intent(this, Notification_Page::class.java))
                 finish()
                 return true
             }
@@ -145,8 +144,10 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
             R.id.removeID -> {
                 MaterialAlertDialogBuilder(this)
                     .setTitle("Odstránenie užívateľa")
-                    .setMessage("Naozaj chcete odstrániť vaše užívateľské konto?\n" +
-                            "aktuálne prihlásený ako: ${mAuth.currentUser!!.email}")
+                    .setMessage(
+                        "Naozaj chcete odstrániť vaše užívateľské konto?\n" +
+                                "aktuálne prihlásený ako: ${mAuth.currentUser!!.email}"
+                    )
                     .setPositiveButton("Áno") { p0, p1 ->
                         var uid = mAuth.currentUser!!.uid.toString()
                         mAuth.currentUser!!.delete()
@@ -158,20 +159,23 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
                                 showToast("nastala chyba: " + exception.localizedMessage)
                             }
                     }
-                    .setNegativeButton("Nie") {dialog, which ->
+                    .setNegativeButton("Nie") { dialog, which ->
                     }
                     .show()
 
-//                Toast.makeText(this,"remove user", Toast.LENGTH_SHORT).show()
                 return true
             }
+            // sipka nazad, vraciam sa na HomePage
             android.R.id.home -> {
                 backToHomePage()
                 return true
-            }else -> super.onOptionsItemSelected(item)
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
+    // obsluha kliknutia na polozku (ECV) na parkovisku, po stlaceni na cervene X, vyskoci
+    // dialogove okno, ci si ozaj prajem zmazat danu ECV, ak ano, zmaze sa
     override fun onItemClick(position: Int) {
         MaterialAlertDialogBuilder(this)
             .setTitle("Odstránenie ${list[position].name}")
@@ -179,52 +183,61 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
             .setPositiveButton("Áno") { p0, p1 ->
                 list[position].name?.let { removeItem(it) }
             }
-            .setNegativeButton("Nie") {dialog, which ->
+            .setNegativeButton("Nie") { dialog, which ->
             }
             .show()
     }
 
+    // metoda nacitania znaciek k danemu parkovisku danehu usera, ulozenie tychto do recyclerView
+    // pomocou adapteru a zapnutie listeneru, ktory pocuva na zmeny v DB
     private fun getDataFromDB() {
         valueListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 list.clear()
                 // kotrola existencie referencie
-                if (snapshot.exists()){
+                if (snapshot.exists()) {
                     // prechadzanie poloziek (child-ov)
-                    for (i in snapshot.children){
+                    for (i in snapshot.children) {
                         // kontrola existencie UID v danom parkovisku
                         if (i.key.toString().equals("empty"))
                             break
                         // pridanie do arrayListu (ecv + datum vytvorenia)
-                        list.add(LicPlateData(i.key.toString(),
-                            i.child("created").value.toString()))
+                        list.add(
+                            LicPlateData(
+                                i.key.toString(),
+                                i.child("created").value.toString()
+                            )
+                        )
                     }
-                    if (list.isEmpty() || list[0].name.equals("empty")){
+                    // ak je prazdne, nastavi sa prazdny layout, inak sa naplnia polozky do recycleru
+                    if (list.isEmpty() || list[0].name.equals("empty")) {
                         setEmptyContent(true)
                     } else {
                         setEmptyContent(false)
-                        plateRecView.adapter = LicPlateAdapter(list,this@LicPlate_Page)
+                        plateRecView.adapter = LicPlateAdapter(list, this@LicPlate_Page)
                     }
 
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(applicationContext,error.toString(), Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, error.toString(), Toast.LENGTH_LONG).show()
             }
         }
-        parkReference.addValueEventListener(valueListener)
+        parkReference.addValueEventListener(valueListener)  // zapnutie pocuvania na zmeny
     }
 
-    private fun isPlateInList(plateName: String): Boolean{
-        for (plate in list.iterator()){
+    // kontrola, ci sa dana ECV nachadza na parkovisku (pomocna funkcia pre addBtn)
+    private fun isPlateInList(plateName: String): Boolean {
+        for (plate in list.iterator()) {
             if (plate.name!!.compareTo(plateName) == 0)
                 return true
         }
         return false
     }
 
-    private fun addItem(plateName: String){
+    // pridanie novej ECV do DB aj s datumom vytvorenia
+    private fun addItem(plateName: String) {
         val item = object : ValueEventListener {
             val cal = Calendar.getInstance()
             var actualDate: String = cal.get(Calendar.DAY_OF_MONTH).toString() +
@@ -234,13 +247,14 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
                     "/" + cal.get(Calendar.MONTH).toString() +
                     " " + cal.get(Calendar.HOUR_OF_DAY).toString() +
                     ":" + cal.get(Calendar.MINUTE).toString()
+
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     snapshot.child(plateName).child("created").ref.setValue(actualDate)
                     snapshot.child(plateName).child("notify").ref.setValue(false)
                     snapshot.child(plateName).child("seen").ref.setValue(true)
                     snapshot.child(plateName).child("lastVisited").ref.setValue(visitedTime)
-                    if (list.size == 0 && snapshot.child("empty").exists()){
+                    if (list.size == 0 && snapshot.child("empty").exists()) {
                         snapshot.child("empty").ref.removeValue()
                     }
                 }
@@ -253,11 +267,14 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
         parkReference.addListenerForSingleValueEvent(item)
     }
 
-    private fun removeItem(plateName: String){
+    // odstranenie ECV z DB, ak odstranujeme poslednu polozku, musime tu pridat "empty" znacku,
+    // aby ostal zachovany zaznam o uid pre dane parkovisko, inak by sa uz nove polozky
+    // nemohli pridat!
+    private fun removeItem(plateName: String) {
         val item = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    if (list.size == 1){
+                    if (list.size == 1) {
                         snapshot.child("empty").ref.setValue("null")
                     }
                     snapshot.child(plateName).ref.removeValue()
@@ -271,6 +288,7 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
         parkReference.addListenerForSingleValueEvent(item)
     }
 
+    // odstranenie uctu
     private fun deleteUserFromDB(uid: String) {
         val deleteUser = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -286,37 +304,39 @@ class LicPlate_Page : AppCompatActivity(), LicPlateAdapter.OnItemClickListener {
                 showToast(error.toString())
             }
         }
-//        db.addValueEventListener(deleteUser)
         db.addListenerForSingleValueEvent(deleteUser)
     }
 
-    private fun showToast(text: String){
-        Toast.makeText(this,text, Toast.LENGTH_SHORT).show()
+    // pomocna funkcia vypisania Toastu, kde bude vypisana sprava z parametru tejto metody
+    private fun showToast(text: String) {
+        Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
     }
 
-    private fun setEmptyContent(isEmpty: Boolean){
-        if (isEmpty){
+    // metoda prepinana layoutov recycleru (ak je prazny, zneviditelnime ho a nastavime prazdne
+    // logo pozadia)
+    private fun setEmptyContent(isEmpty: Boolean) {
+        if (isEmpty) {
             emptyLayout.visibility = View.VISIBLE
             plateRecView.visibility = View.INVISIBLE
-        }
-        else{
+        } else {
             emptyLayout.visibility = View.INVISIBLE
             plateRecView.visibility = View.VISIBLE
         }
     }
 
+    // otvorenie aktivity Login_page a nasledne zatvorenie (zrusenie) tejto aktivity
     private fun backToLoginPage() {
-        startActivity(Intent(this,Login_page::class.java))
+        startActivity(Intent(this, Login_page::class.java))
         finish()
     }
 
+    // otvorenie aktivity HomePage a nasledne zatvorenie (zrusenie) tejto aktivity
     private fun backToHomePage() {
-        startActivity(Intent(this,HomePage::class.java))
+        startActivity(Intent(this, HomePage::class.java))
         finish()
     }
 
-
-
+    // funkcia, ktora zmaze neziaduce listenery, aby dalej nepocuvali pri zatvoreni aktivity
     override fun onDestroy() {
         super.onDestroy()
         parkReference.removeEventListener(valueListener)
